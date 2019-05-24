@@ -1,0 +1,23 @@
+{
+  "name": "rdkafka",
+  "version": "1.0.0",
+  "description": "kafka-imple",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Blizzard/node-rdkafka.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Blizzard/node-rdkafka/issues"
+  },
+  "homepage": "https://github.com/Blizzard/node-rdkafka#readme",
+  "dependencies": {
+    "node-rdkafka": "^2.6.1",
+    "stream": "0.0.2"
+  }
+}
