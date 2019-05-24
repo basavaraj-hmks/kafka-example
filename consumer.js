@@ -8,96 +8,55 @@
  * of the MIT license.  See the LICENSE.txt file for details.
  */
 
-var Transform = require('stream').Transform;
+//var Transform = require('stream').Transform;
 
 var Kafka = require('node-rdkafka');
 
-// var stream = Kafka.KafkaConsumer.createReadStream({
-//   'metadata.broker.list': 'localhost:9092',
-//   'group.id': 'basavaraj'
-// }, {}, {
-//   topics: ['test']
-// });
-
-// stream.on('error', function(err) {
-//   if (err) console.log(err);
-//   process.exit(1);
-// });
-
-// stream.pipe(process.stdout);
-
-// stream.on('error', function(err) {
-//   console.log(err);
-//   process.exit(1);
-// });
-
-// stream.consumer.on('event.error', function(err) {
-//   console.log(err);
-// });
-/*
- * node-rdkafka - Node.js wrapper for RdKafka C/C++ library
- *
- * Copyright (c) 2016 Blizzard Entertainment
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE.txt file for details.
- */
-
-var consumer = new Kafka.KafkaConsumer({
-  //'debug': 'all',
+const defaultConfig = {
+  // The group.id and metadata.broker.list properties are required for a consumer
+  'group.id': 'my-group1',
   'metadata.broker.list': 'localhost:9092'
-});
+}
 
-var topicName = 'test';
+const topicConf = {
+  /*
+    See the reason
+  
+    https://github.com/Blizzard/node-rdkafka/issues/437#issuecomment-406129883
+    https://github.com/Blizzard/node-rdkafka/issues/495
+    https://cwiki.apache.org/confluence/display/KAFKA/FAQ#FAQ-Whydoesmyconsumernevergetanydata?
+ */
+  'auto.offset.reset': 'earliest' // <-- THIS OPTIONS
+}
 
-//logging debug messages, if debug is enabled
-consumer.on('event.log', function(log) {
-  console.log(log);
-});
+const consumer = new Kafka.KafkaConsumer(defaultConfig, topicConf)
 
-//logging all errors
-consumer.on('event.error', function(err) {
-  console.error('Error from consumer');
-  console.error(err);
-});
+consumer.on('ready', () => {
+  console.log('Consumer was connected successfully!')
 
-//counter to commit offsets every numMessages are received
-var counter = 0;
-var numMessages = 5;
-
-consumer.on('ready', function(arg) {
-  console.log('consumer ready.' + JSON.stringify(arg));
-
-  consumer.subscribe([topicName]);
-  //start consuming messages
+  consumer.subscribe(['test'])
+  /*
+    Standard API
+    https://github.com/Blizzard/node-rdkafka#standard-api-1
+  */
   consumer.consume();
-});
+})
 
+consumer.on('data', (message) => {
+  console.log('on:data. Message found: ', message)
+  // consumer.commitMessageSync(message)
+  consumer.disconnect()
+})
 
-consumer.on('data', function(m) {
-  console.log("Inside data");
-  counter++;
+consumer.on('event.error', (err) => {
+  console.error('Error from consumer')
+  console.error(err)
+})
 
-  //committing offsets every numMessages
-  if (counter % numMessages === 0) {
-    console.log('calling commit');
-    consumer.commit(m);
-  }
-
-  // Output the actual message contents
-  console.log(JSON.stringify(m));
-  console.log(m.value.toString());
-
-});
-
-consumer.on('disconnected', function(arg) {
-  console.log('consumer disconnected. ' + JSON.stringify(arg));
-});
-
-//starting the consumer
-consumer.connect();
+consumer.connect()
 
 //stopping this example after 30s
 setTimeout(function() {
-  consumer.disconnect();
-}, 30000);
+  console.log('Timeout is exceeded. Disconnecting...')
+  consumer.disconnect()
+}, 70000)
